@@ -51,12 +51,12 @@ GROUP BY DepartmentName,DesignationName
 --select * from vw_Q4
 
 --5.Create a view that displays worker names who don’t have either in any department or designation
-create view vw_Q5
+CREATE view vw_Q5
 AS 
 Select FirstName + LastName as WorkerName
 from Person
-where DepartmentID = Null 
-or DesignationID = Null
+where DepartmentID IS Null 
+or DesignationID IS Null
 
 select * from vw_Q5
  
