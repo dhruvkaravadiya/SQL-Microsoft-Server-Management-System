@@ -1,3 +1,4 @@
+create database lab5
 --1.
 --Create INSERT, UPDATE & DELETE Stored Procedures for Person table.
 
@@ -7,36 +8,40 @@
 alter PROC PR_Insert_Person
 	@PersonID int,
 	@PersonName varchar(50),
+	@Salary varchar(50),
 	@JoiningDate datetime,
 	@City varchar(100),
-	@Salary varchar(50),
+	@Age int,
 	@BirthDate datetime
 AS
 BEGIN
 Insert into Person(
-	PersonID,PersonName,JoiningDate,City,Salary,BirthDate
+	PersonID,PersonName,Salary,JoiningDate,City,Age,BirthDate
 )
 VALUES(
 	@PersonID,
 	@PersonName,
-	@JoiningDate,
-	@City,
 	@Salary,
+	@JoiningDate,
+	@City,	
+	@Age,
 	@BirthDate
 )
 END
 
+INSERT INTO Person VALUES(61,'Dh234ruv',1000,'2022-04-22','Rajkot',20,'2003-04-22');
 
+select * from PersonLog
 --------------------
 --Update Procedure
 --------------------
 
-CREATE PROC PR_Update_Person
+alter PROC PR_Update_Person
 	@PersonID int,
 	@PersonName varchar(50),
-	@JoiningDate datetime,
-	@City varchar(100),
 	@Salary varchar(50),
+	@JoiningDate datetime,
+	@City varchar(100),	
 	@Age int,
 	@BirthDate datetime
 AS
@@ -45,9 +50,9 @@ Update Person
 Set
 	PersonID=@PersonID,
 	PersonName=@PersonName,
+	Salary=@Salary,
 	JoiningDate=@JoiningDate,
 	City=@City,
-	Salary=@Salary,
 	Age=@Age,
 	BirthDate=@BirthDate
 WHERE PersonID=@PersonID
@@ -70,89 +75,58 @@ END
 --2.
 --Create a trigger that fires on INSERT, UPDATE and DELETE operation on the Person table. For that,
 --create a new table PersonLog to log (enter) all operations performed on the Person table.
-Create TRIGGER TR_Q2
+create TRIGGER TR_Q5
 ON Person
 FOR INSERT,UPDATE,DELETE
 AS
 BEGIN
 	DECLARE 
 		@PersonID int,
+		@PersonName varchar(100),
 		@operation varchar(6)
 
-	SET @operation = CASE
-		when exists(Select * from inserted)
-			then 'Insert'
-		when exists(Select * from deleted)
-			then 'Delete'
-		when exists(Select * from deleted) AND exists(Select * from inserted)
-			then 'Update'
-		else NULL
-	END
+	
+		IF exists(Select * from inserted)
+			SET @operation = 'Insert'
+		ELSE IF exists(Select * from deleted)
+			SET @operation = 'Delete'
+		ELSE IF exists(Select * from deleted) AND exists(Select * from inserted)
+			SET @operation = 'Update'
+		
+
 
 	IF @operation = 'Insert'
-		INSERT INTO PersonLog(
-			PersonID,PersonName,Operation,UpdatedDate
+		BEGIN
+			Select @PersonID = PersonID, @PersonName = PersonName 
+				FROM inserted 	
+	END	
+
+	ELSE
+		BEGIN
+			Select @PersonID = PersonID, @PersonName = PersonName 
+				FROM deleted
+		
+		END
+	
+	
+	INSERT INTO PersonLog
+		values(
+			@PersonID , @PersonName , @operation , getdate()
 		)
-		Select @PersonID, inserted.PersonName , @operation , Getdate()
-		FROM inserted
-	IF @operation = 'Delete'
-		INSERT INTO PersonLog(
-			PersonID,PersonName,Operation,UpdatedDate
-		)
-		Select @PersonID , deleted.PersonName , @operation , Getdate()
-		FROM deleted
-	IF @operation = 'Update'
-		INSERT INTO PersonLog(
-			PersonID, PersonName , Operation , UpdatedDate
-		)
-		Select @PersonID , inserted.PersonName , @operation , Getdate()
-		FROM inserted
+		
 END
 
-
-
---------------------------------------------------------------------------------------------------------
---2.
---Create a trigger that fires on INSERT, UPDATE and DELETE operation on the Person table. For that,
---create a new table PersonLog to log (enter) all operations performed on the Person table.
-Create TRIGGER TR_Q2
-ON Person
-FOR INSERT,UPDATE,DELETE
+--insert into Person 1,'Dhruv',20,'20220422','Rajkot',100,'20030422'
+-----------------------------------------------------------------------------------------------
+--4.
+--Create DELETE trigger on PersonLog table, when we delete any record of PersonLog table it prints
+--‘Record deleted successfully from PersonLog’.
+create trigger TR_Q4
+on PersonLog
+FOR DELETE
 AS
 BEGIN
-	DECLARE 
-	
-		@operation varchar(6)
-
-	SET @operation = CASE
-		when exists(Select * from inserted)
-			then 'Insert'
-		when exists(Select * from deleted)
-			then 'Delete'
-		when exists(Select * from deleted) AND exists(Select * from inserted)
-			then 'Update'
-		else NULL
-	END
-
-	IF @operation = 'Insert'
-		INSERT INTO PersonLog(
-			PersonID,PersonName,Operation,UpdatedDate
-		)
-		Select @PersonID, inserted.PersonName , @operation , Getdate()
-		FROM inserted
-	IF @operation = 'Delete'
-		INSERT INTO PersonLog(
-			PersonID,PersonName,Operation,UpdatedDate
-		)
-		Select @PersonID , deleted.PersonName , @operation , Getdate()
-		FROM deleted
-	IF @operation = 'Update'
-		INSERT INTO PersonLog(
-			PersonID, PersonName , Operation , UpdatedDate
-		)
-		Select @PersonID , inserted.PersonName , @operation , Getdate()
-		FROM inserted
+	PRINT 'Record deleted successfully from PersonLog'
 END
+-----------------------------------------------------------------------------------------------
 
-
-exec PR_Insert_Person 1,Dhruv,'20220422',Rajkot,100,'20030422'
